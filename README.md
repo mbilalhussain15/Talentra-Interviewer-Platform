@@ -158,14 +158,14 @@ Talentra-Interviewer-Platform/
 
 | Service | Platform | URL |
 |---------|----------|-----|
-| Frontend | Vercel | [talentra-interviewer-platform.vercel.app](https://mbilalhussain-talentra-ip.vercel.app) |
+| Frontend | Vercel | [mbilalhussain-talentra-ip.vercel.app](https://mbilalhussain-talentra-ip.vercel.app) |
 | Backend | Render | [talentra-interviewer-platform.onrender.com](https://talentra-interviewer-platform.onrender.com) |
 
 ---
 
 ## 📄 License
 
-MIT License — feel free to use this project for learning or as a base for your own interview platform.
+MIT License © 2026 [Muhammad Bilal Hussain](https://github.com/mbilalhussain15)
 
 ---
 
