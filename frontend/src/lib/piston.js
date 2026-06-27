@@ -1,84 +1,60 @@
-// Judge0 CE API via RapidAPI for code execution
+// Piston API - self hosted public instance
+const PISTON_API = "https://emkc.org/api/v2/piston";
 
-const JUDGE0_API = "https://judge0-ce.p.rapidapi.com";
-const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-
-// Judge0 language IDs
-const LANGUAGE_IDS = {
-  javascript: 63,  // Node.js 12.14.0
-  python: 71,      // Python 3.8.1
-  java: 62,        // Java 13.0.1
+const LANGUAGE_VERSIONS = {
+  javascript: { language: "javascript", version: "18.15.0" },
+  python: { language: "python", version: "3.10.0" },
+  java: { language: "java", version: "15.0.2" },
 };
 
-/**
- * @param {string} language - programming language
- * @param {string} code - source code to execute
- * @returns {Promise<{success:boolean, output?:string, error?: string}>}
- */
 export async function executeCode(language, code) {
   try {
-    const languageId = LANGUAGE_IDS[language];
+    const languageConfig = LANGUAGE_VERSIONS[language];
 
-    if (!languageId) {
-      return {
-        success: false,
-        error: `Unsupported language: ${language}`,
-      };
+    if (!languageConfig) {
+      return { success: false, error: `Unsupported language: ${language}` };
     }
 
-    // Step 1: Submit code
-    const submitRes = await fetch(`${JUDGE0_API}/submissions?base64_encoded=false&wait=true`, {
+    // Try primary API
+    let response = await fetch(`${PISTON_API}/execute`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
-        "x-rapidapi-key": RAPIDAPI_KEY,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        language_id: languageId,
-        source_code: code,
+        language: languageConfig.language,
+        version: languageConfig.version,
+        files: [{ name: `main.${getFileExtension(language)}`, content: code }],
       }),
     });
 
-    if (!submitRes.ok) {
-      return {
-        success: false,
-        error: `Submission failed (status: ${submitRes.status})`,
-      };
+    // Fallback to alternative public Piston instance
+    if (!response.ok) {
+      response = await fetch("https://piston-api.ariansjdi.repl.co/api/v2/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: languageConfig.language,
+          version: "*",
+          files: [{ name: `main.${getFileExtension(language)}`, content: code }],
+        }),
+      });
     }
 
-    const result = await submitRes.json();
-
-    const stdout = result.stdout || "";
-    const stderr = result.stderr || "";
-    const compileOutput = result.compile_output || "";
-    const error = stderr || compileOutput;
-
-    if (error) {
-      return {
-        success: false,
-        output: stdout,
-        error: error,
-      };
+    if (!response.ok) {
+      return { success: false, error: "Code execution service unavailable. Please try again." };
     }
 
-    return {
-      success: true,
-      output: stdout || "No output",
-    };
+    const data = await response.json();
+    const output = data.run?.output || "";
+    const stderr = data.run?.stderr || "";
+
+    if (stderr) return { success: false, output, error: stderr };
+    return { success: true, output: output || "No output" };
+
   } catch (error) {
-    return {
-      success: false,
-      error: `Failed to execute code: ${error.message}`,
-    };
+    return { success: false, error: `Failed to execute code: ${error.message}` };
   }
 }
 
 function getFileExtension(language) {
-  const extensions = {
-    javascript: "js",
-    python: "py",
-    java: "java",
-  };
-  return extensions[language] || "txt";
+  return { javascript: "js", python: "py", java: "java" }[language] || "txt";
 }
