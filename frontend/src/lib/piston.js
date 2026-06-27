@@ -1,5 +1,4 @@
 // Piston API is a service for code execution
-
 const PISTON_API = "https://emkc.org/api/v2/piston";
 
 const LANGUAGE_VERSIONS = {
@@ -28,6 +27,7 @@ export async function executeCode(language, code) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Piston-Secret": "",
       },
       body: JSON.stringify({
         language: languageConfig.language,
@@ -44,7 +44,7 @@ export async function executeCode(language, code) {
     if (!response.ok) {
       return {
         success: false,
-        error: `HTTP error! status: ${response.status}`,
+        error: `Code execution failed (status: ${response.status}). Please try again.`,
       };
     }
 
